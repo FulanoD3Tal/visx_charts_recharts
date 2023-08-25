@@ -1,4 +1,4 @@
-import { Metadata } from 'next';
+'use client';
 import data from '../../../data/linearData.json';
 import { scaleBand, scaleLinear } from '@visx/scale';
 import { AxisBottom, AxisLeft } from '@visx/axis';
@@ -7,10 +7,8 @@ import { LinePath } from '@visx/shape';
 import { curveBasis } from '@visx/curve';
 import { MarkerCircle } from '@visx/marker';
 import { GridColumns, GridRows } from '@visx/grid';
-
-export const metadata: Metadata = {
-  title: 'LineChart | Visx',
-};
+import { useTooltip, Tooltip, defaultStyles } from '@visx/tooltip';
+import { localPoint } from '@visx/event';
 
 export default function LinesPage() {
   const widthSvg = 600;
@@ -22,7 +20,7 @@ export default function LinesPage() {
   const height = heightSvg - margin.top - margin.bottom;
 
   const getX = (d: (typeof data)[0]) => d.name;
-  const getY = (d: (typeof data)[0]) => d.uv;
+  const getY = (d: (typeof data)[0]) => d.amt;
 
   const xDomain = data.map(getX);
   const yDomain = data.map(getY);
@@ -32,11 +30,21 @@ export default function LinesPage() {
     range: [0, width],
   });
 
+  const eachBand = xScale.step();
+
   const yScale = scaleLinear<number>({
     domain: [Math.max(...yDomain), Math.min(...yDomain)],
     range: [0, height],
-    nice: true,
   });
+
+  const {
+    tooltipOpen,
+    showTooltip,
+    hideTooltip,
+    tooltipData,
+    tooltipTop,
+    tooltipLeft,
+  } = useTooltip<Partial<(typeof data)[0]>>();
 
   return (
     <div>
@@ -73,9 +81,30 @@ export default function LinesPage() {
             stroke='#8a52de'
             strokeWidth={3}
             markerMid='url(#marker-circle)'
+            onMouseMove={(event) => {
+              const point = localPoint(event) || {
+                x: 0,
+                y: 0,
+              };
+              const { clientX, clientY } = event;
+              const index = Math.floor(point.x / eachBand);
+              const name = xScale.domain()[index];
+              const d = data.filter((da) => da.name === name);
+              showTooltip({
+                tooltipLeft: clientX,
+                tooltipTop: clientY,
+                tooltipData: d[0] ?? {},
+              });
+            }}
+            onMouseOut={hideTooltip}
           />
         </Group>
       </svg>
+      {tooltipOpen && tooltipData && (
+        <Tooltip key={Math.random()} top={tooltipTop} left={tooltipLeft}>
+          Value: <strong>{JSON.stringify(tooltipData)}</strong>
+        </Tooltip>
+      )}
     </div>
   );
 }
