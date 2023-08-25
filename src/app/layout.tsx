@@ -26,6 +26,7 @@ export default function RootLayout({
           </p>
 
           <Link href='/chart/lines'>Line chart</Link>
+          <Link href='/chart/bars'>Bars chart</Link>
           {children}
         </main>
       </body>

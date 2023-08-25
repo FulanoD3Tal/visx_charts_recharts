@@ -3,12 +3,10 @@ import data from '../../../data/linearData.json';
 import { scaleBand, scaleLinear } from '@visx/scale';
 import { AxisBottom, AxisLeft } from '@visx/axis';
 import { Group } from '@visx/group';
-import { LinePath } from '@visx/shape';
-import { curveBasis } from '@visx/curve';
+import { Bar } from '@visx/shape';
 import { MarkerCircle } from '@visx/marker';
 import { GridColumns, GridRows } from '@visx/grid';
-import { useTooltip, Tooltip, defaultStyles } from '@visx/tooltip';
-import { localPoint } from '@visx/event';
+import { useTooltip, Tooltip } from '@visx/tooltip';
 
 export default function LinesPage() {
   const widthSvg = 600;
@@ -28,9 +26,8 @@ export default function LinesPage() {
   const xScale = scaleBand<string>({
     domain: xDomain,
     range: [0, width],
+    padding: 0.1,
   });
-
-  const eachBand = xScale.step();
 
   const yScale = scaleLinear<number>({
     domain: [Math.max(...yDomain) * 1.1, Math.min(...yDomain) * 0.9],
@@ -74,31 +71,31 @@ export default function LinesPage() {
           />
           <AxisBottom scale={xScale} top={height} />
           <AxisLeft scale={yScale} />
-          <LinePath
-            curve={curveBasis}
-            data={data}
-            x={(d) => xScale(getX(d)) ?? 0}
-            y={(d) => yScale(getY(d)) ?? 0}
-            stroke='#8a52de'
-            strokeWidth={3}
-            markerMid='url(#marker-circle)'
-            onMouseMove={(event) => {
-              const point = localPoint(event) || {
-                x: 0,
-                y: 0,
-              };
-              const { clientX, clientY } = event;
-              const index = Math.floor(point.x / eachBand);
-              const name = xScale.domain()[index];
-              const d = data.filter((da) => da.name === name);
-              showTooltip({
-                tooltipLeft: clientX,
-                tooltipTop: clientY,
-                tooltipData: d[0] ?? {},
-              });
-            }}
-            onMouseOut={hideTooltip}
-          />
+          {data.map((d) => {
+            const barWidth = xScale.bandwidth();
+            const barHeigth = height - yScale(getY(d) ?? 0);
+            const xBar = xScale(getX(d));
+            const yBar = height - barHeigth;
+            return (
+              <Bar
+                key={`bar-${d.name}`}
+                x={xBar}
+                y={yBar}
+                width={barWidth}
+                height={barHeigth}
+                fill='#8a52de'
+                onMouseMove={(event) => {
+                  const { clientX, clientY } = event;
+                  showTooltip({
+                    tooltipLeft: clientX,
+                    tooltipTop: clientY,
+                    tooltipData: d,
+                  });
+                }}
+                onMouseOut={hideTooltip}
+              />
+            );
+          })}
         </Group>
       </svg>
       {tooltipOpen && tooltipData && (
