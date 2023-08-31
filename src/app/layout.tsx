@@ -18,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang='en'>
       <body className={montserrat.className}>
-        <main className='flex min-h-screen flex-col items-center p-24'>
+        <main className='p-4 md:max-w-3xl mx-auto'>
           <h1 className='text-3xl font-bold mb-4'>Visx example charts</h1>
 
           <p>

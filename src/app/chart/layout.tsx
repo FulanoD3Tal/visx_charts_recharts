@@ -3,5 +3,7 @@ export default function ChartLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <section>{children}</section>;
+  return (
+    <section className='h-[350px] md:h-[400px] w-full'>{children}</section>
+  );
 }
