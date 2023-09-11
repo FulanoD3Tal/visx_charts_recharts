@@ -1,5 +1,4 @@
-import data from '../data/linearData.json';
-import { scaleBand, scaleLinear } from '@visx/scale';
+import { scaleLinear, scaleTime } from '@visx/scale';
 import { AxisBottom, AxisLeft } from '@visx/axis';
 import { Group } from '@visx/group';
 import { LinePath } from '@visx/shape';
@@ -8,29 +7,29 @@ import { MarkerCircle } from '@visx/marker';
 import { GridColumns, GridRows } from '@visx/grid';
 import { useTooltip, Tooltip } from '@visx/tooltip';
 import { localPoint } from '@visx/event';
+import { timeFormat } from '@visx/vendor/d3-time-format';
 import { type ChartProps } from '../types/chartTypes';
 
-export default function LineGraph({
+export default function LineGraph<T>({
   width: widthSvg,
   height: heightSvg,
-}: ChartProps) {
+  data,
+  getX,
+  getY,
+}: ChartProps<T>) {
   const margin = { top: 20, left: 50, bottom: 50, right: 20 };
 
   const width = widthSvg - margin.left - margin.right;
   const height = heightSvg - margin.top - margin.bottom;
 
-  const getX = (d: (typeof data)[0]) => d.name;
-  const getY = (d: (typeof data)[0]) => d.amt;
-
   const xDomain = data.map(getX);
   const yDomain = data.map(getY);
 
-  const xScale = scaleBand<string>({
-    domain: xDomain,
+  const xScale = scaleTime<number>({
+    domain: [Math.min(...xDomain), Math.max(...xDomain)],
     range: [0, width],
+    round: true,
   });
-
-  const eachBand = xScale.step();
 
   const yScale = scaleLinear<number>({
     domain: [Math.max(...yDomain) * 1.1, Math.min(...yDomain) * 0.9],
@@ -72,8 +71,12 @@ export default function LineGraph({
             height={height}
             stroke='#ffff'
           />
-          <AxisBottom scale={xScale} top={height} />
-          <AxisLeft scale={yScale} />
+          <AxisBottom
+            scale={xScale}
+            top={height}
+            tickFormat={(v) => timeFormat('%b %Y')(v as Date)}
+          />
+          <AxisLeft scale={yScale} hideTicks />
           <LinePath
             curve={curveBasis}
             data={data}
@@ -81,21 +84,20 @@ export default function LineGraph({
             y={(d) => yScale(getY(d)) ?? 0}
             stroke='#8a52de'
             strokeWidth={3}
-            markerMid='url(#marker-circle)'
             onMouseMove={(event) => {
-              const point = localPoint(event) || {
-                x: 0,
-                y: 0,
-              };
-              const { clientX, clientY } = event;
-              const index = Math.floor(point.x / eachBand);
-              const name = xScale.domain()[index];
-              const d = data.filter((da) => da.name === name);
-              showTooltip({
-                tooltipLeft: clientX,
-                tooltipTop: clientY,
-                tooltipData: d[0] ?? {},
-              });
+              // const point = localPoint(event) || {
+              //   x: 0,
+              //   y: 0,
+              // };
+              // const { clientX, clientY } = event;
+              // const index = Math.floor(point.x / eachBand);
+              // const name = xScale.domain()[index];
+              // const d = data.filter((da) => da.name === name);
+              // showTooltip({
+              //   tooltipLeft: clientX,
+              //   tooltipTop: clientY,
+              //   tooltipData: d[0] ?? {},
+              // });
             }}
             onMouseOut={hideTooltip}
           />
